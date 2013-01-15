@@ -9,6 +9,7 @@ Inspired by https://github.com/busyloop/lolcat
 import sys
 import random
 import math
+import argparse
 
 FREQ = 0.1
 SPREAD = 3.0
@@ -37,16 +38,36 @@ def rainbow(pos):
     blue = math.sin(FREQ * pos + math.pi * 4 / 3) * 127 + 128
     return (red, green, blue)
 
+def lol(string, offset=random.randint(0, 200)):
+    """lol a string."""
+    result = ''
+    for i, line in enumerate(string.split('\n')):
+        for j, char in enumerate(line):
+            # colour is based on the sum of the row/column, to a scaling factor
+            rgb = rainbow(offset + i + j / SPREAD)
+            result += colour(char, *rgb)
+        result += '\n' # print the newline normally
+
+    if string.endswith('\n'):
+        result = result[:-1] # avoid an extra newline at the end
+    return result
+
+def cat(f):
+    """cat a file."""
+    return f.read()
+
+class LolArgumentParser(argparse.ArgumentParser):
+    def format_help(self):
+        return lol(super(LolArgumentParser, self).format_help())
+
 if __name__ == '__main__':
-    files = sys.argv[1:] or ['-']
-    offset = random.randint(0, 200)
+    parser = LolArgumentParser(description="Like cat, but with colours.")
+    parser.add_argument('files', nargs='*', default=['-'], metavar='file',
+        help='Files to cat. "-" is stdin. Default is stdin.')
+    args = parser.parse_args()
 
     # lolcat each file.
-    for fname in files:
+    for fname in args.files:
         f = open(fname) if fname != '-' else sys.stdin
-        for i, line in enumerate(f):
-            for j, char in enumerate(line[:-1]):
-                rgb = rainbow(offset + i + j / SPREAD)
-                sys.stdout.write(colour(char, *rgb))
-            sys.stdout.write(line[-1]) # print the newline normally
-        f.close()
+        with f:
+            sys.stdout.write(lol(cat(f)))
