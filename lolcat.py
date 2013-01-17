@@ -13,6 +13,7 @@ import argparse
 
 FREQ = 0.1
 SPREAD = 3.0
+SEED = random.randint(0, 200)
 
 def rgb_to_256(red, green, blue):
     """Convert an RGB-colour to the nearest 256-colour."""
@@ -38,13 +39,13 @@ def rainbow(pos):
     blue = math.sin(FREQ * pos + math.pi * 4 / 3) * 127 + 128
     return (red, green, blue)
 
-def lol(string, offset=random.randint(0, 200)):
+def lol(string):
     """lol a string."""
     result = ''
     for i, line in enumerate(string.split('\n')):
         for j, char in enumerate(line):
             # colour is based on the sum of the row/column, to a scaling factor
-            rgb = rainbow(offset + i + j / SPREAD)
+            rgb = rainbow(SEED + i + j / SPREAD)
             result += colour(char, *rgb)
         result += '\n' # print the newline normally
 
@@ -62,9 +63,19 @@ class LolArgumentParser(argparse.ArgumentParser):
 
 if __name__ == '__main__':
     parser = LolArgumentParser(description="Like cat, but with colours.")
+    parser.add_argument('-p', '--spread', type=float, default=SPREAD, metavar="s",
+            help="Rainbow spread (default {})".format(SPREAD))
+    parser.add_argument('-F', '--freq', type=float, default=FREQ, metavar="f",
+            help="Rainbow frequency (default {})".format(FREQ))
+    parser.add_argument('-S', '--seed', type=int, default=None, metavar="s",
+            help="Rainbow start seed (default random)")
     parser.add_argument('files', nargs='*', default=['-'], metavar='file',
-        help='Files to cat. "-" is stdin. Default is stdin.')
+            help='Files to cat. "-" is stdin. Default is stdin.')
     args = parser.parse_args()
+
+    FREQ = args.freq
+    SPREAD = args.spread
+    SEED = args.seed if args.seed is not None else SEED
 
     # lolcat each file.
     for fname in args.files:
